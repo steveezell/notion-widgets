@@ -397,7 +397,16 @@
       `;
     }
 
-    async function loadStandings() {
+    function getSpoilerState(lastEvent, now) {
+      if (!lastEvent) return { active: false, liftTime: null };
+      const gameStart = new Date(lastEvent.competitions[0].date);
+      const estimatedEnd = new Date(gameStart.getTime() + AVG_GAME_DURATION_MS);
+      const liftTime = new Date(estimatedEnd.getTime() + SPOILER_HOURS * 60 * 60 * 1000);
+      return { active: liftTime > now, liftTime };
+    }
+
+    async function loadStandings(spoilerActive) {
+      if (spoilerActive) return; // never reveal standings during spoiler window
       try {
         const res = await fetch(
           `https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?level=3&season=2026&seasontype=2`
@@ -414,14 +423,13 @@
               const seed = stats.playoffSeed?.displayValue || '?';
               // 'points' is GB from team directly above in conf standings
               const gbRaw = stats.points?.value ?? null;
-              const gb = gbRaw === 0 ? '–' : gbRaw !== null ? gbRaw : '?';
               const el = document.getElementById('standings-inline');
               if (el) {
                 const seedNum = parseInt(seed);
                 const seedSuffix = seedNum === 1 ? 'st' : seedNum === 2 ? 'nd' : seedNum === 3 ? 'rd' : 'th';
                 el.textContent = gbRaw === 0
-                  ? `${seedNum}${seedSuffix} in West · leads ${seedNum - 1 > 0 ? (seedNum-1)+'th' : ''}`
-                  : `${seedNum}${seedSuffix} in West · ${gb} GB`;
+                  ? `${seedNum}${seedSuffix} in West`
+                  : `${seedNum}${seedSuffix} in West · ${gbRaw} GB`;
               }
               return;
             }
@@ -438,20 +446,23 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        // Update record
-        const record = data.team?.recordSummary;
-        document.getElementById('record').textContent = record ? `${record} · 2025–26` : '2025–26';
-
         const now = new Date();
         const events = data.events || [];
-
         const past = events.filter(e => new Date(e.date) < now);
         const future = events.filter(e => new Date(e.date) >= now);
+        const lastEvent = past.length > 0 ? past[past.length - 1] : null;
+        const { active: spoilerActive } = getSpoilerState(lastEvent, now);
+
+        // Update record — hide during spoiler window
+        const record = data.team?.recordSummary;
+        document.getElementById('record').textContent = spoilerActive
+          ? '2025–26'
+          : record ? `${record} · 2025–26` : '2025–26';
 
         // Last game
         const lastCard = document.getElementById('last-game-card');
-        if (past.length > 0) {
-          renderLastGame(past[past.length - 1], now);
+        if (lastEvent) {
+          renderLastGame(lastEvent, now);
         } else {
           lastCard.innerHTML = '<div class="card-label">Last Game</div><div class="status-msg">No games played yet</div>';
         }
@@ -465,7 +476,7 @@
         }
 
         document.getElementById('updated-at').textContent = `Updated ${now.toLocaleTimeString()}`;
-        loadStandings();
+        loadStandings(spoilerActive);
       } catch (err) {
         document.getElementById('last-game-card').innerHTML =
           `<div class="card-label">Last Game</div><div class="error-msg">Failed to load data</div>`;
