@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NBA Standings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .widget {
+      width: 100%;
+      max-width: 860px;
+    }
+
+    .widget-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .widget-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .season-badge {
+      font-size: 11px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .conferences {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    @media (max-width: 560px) {
+      .conferences { grid-template-columns: 1fr; }
+    }
+
+    .conference-card {
+      background: #1a1a2e;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .conf-header {
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #aaa;
+      background: #13132a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .conf-header .col-headers {
+      display: flex;
+      gap: 0;
+      font-size: 10px;
+      color: #555;
+      letter-spacing: 0.5px;
+    }
+
+    .col-w   { width: 28px; text-align: right; }
+    .col-l   { width: 24px; text-align: right; }
+    .col-pct { width: 38px; text-align: right; }
+    .col-gb  { width: 32px; text-align: right; }
+    .col-str { width: 30px; text-align: right; }
+
+    .team-row {
+      display: flex;
+      align-items: center;
+      padding: 5px 10px 5px 8px;
+      border-bottom: 1px solid #0f0f1a;
+      gap: 6px;
+      transition: background 0.1s;
+    }
+
+    .team-row:last-child { border-bottom: none; }
+
+    .team-row:hover { background: #1f1f3a; }
+
+    /* Zone coloring */
+    .zone-playoffs  { border-left: 2px solid #2ecc71; }
+    .zone-playin    { border-left: 2px solid #f39c12; }
+    .zone-lottery   { border-left: 2px solid #333; }
+
+    .seed-num {
+      font-size: 10px;
+      color: #444;
+      width: 14px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .team-logo-sm {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .team-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ddd;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-row.highlight .team-name {
+      color: #E56020;
+    }
+
+    .stat {
+      font-size: 11px;
+      color: #888;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat.col-w, .stat.col-l { color: #ccc; }
+
+    .streak-w { color: #2ecc71 !important; }
+    .streak-l { color: #e74c3c !important; }
+
+    /* Divider between top-6 and play-in */
+    .zone-divider {
+      height: 1px;
+      background: #252540;
+      margin: 0;
+    }
+
+    .zone-label {
+      font-size: 9px;
+      color: #333;
+      text-align: center;
+      padding: 2px 0;
+      background: #161628;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .updated-at {
+      text-align: right;
+      font-size: 10px;
+      color: #333;
+      margin-top: 8px;
+    }
+
+    .status-msg {
+      text-align: center;
+      color: #555;
+      font-size: 12px;
+      padding: 20px;
+    }
+
+    .clinched {
+      font-size: 8px;
+      color: #2ecc71;
+      font-weight: 700;
+      margin-left: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <div class="widget-header">
+      <span class="widget-title">NBA Standings</span>
+      <span class="season-badge">2025–26</span>
+    </div>
+
+    <div class="conferences" id="conferences">
+      <div class="conference-card">
+        <div class="conf-header">Eastern Conference
+          <div class="col-headers">
+            <span class="col-w">W</span>
+            <span class="col-l">L</span>
+            <span class="col-pct">PCT</span>
+            <span class="col-gb">GB</span>
+            <span class="col-str">STK</span>
+          </div>
+        </div>
+        <div class="status-msg" id="east-loading">Loading...</div>
+      </div>
+      <div class="conference-card">
+        <div class="conf-header">Western Conference
+          <div class="col-headers">
+            <span class="col-w">W</span>
+            <span class="col-l">L</span>
+            <span class="col-pct">PCT</span>
+            <span class="col-gb">GB</span>
+            <span class="col-str">STK</span>
+          </div>
+        </div>
+        <div class="status-msg" id="west-loading">Loading...</div>
+      </div>
+    </div>
+
+    <div class="updated-at" id="updated-at"></div>
+  </div>
+
+  <script>
+    const HIGHLIGHT_TEAMS = ['21']; // Phoenix Suns
+
+    function getLogoUrl(logos) {
+      if (!logos || logos.length === 0) return '';
+      const light = logos.find(l => l.rel && l.rel.includes('default') && !l.rel.includes('dark'));
+      return light ? light.href : logos[0].href;
+    }
+
+    function streakClass(str) {
+      if (!str) return '';
+      return str.startsWith('W') ? 'streak-w' : 'streak-l';
+    }
+
+    function zoneClass(seed) {
+      if (seed <= 6) return 'zone-playoffs';
+      if (seed <= 10) return 'zone-playin';
+      return 'zone-lottery';
+    }
+
+    function renderConference(containerId, teams) {
+      const card = document.getElementById(containerId)?.closest('.conference-card');
+      if (!card) return;
+
+      // Remove loading placeholder
+      const loading = card.querySelector('.status-msg');
+      if (loading) loading.remove();
+
+      teams.forEach((team, i) => {
+        const seed = team.seed;
+
+        // Zone dividers
+        if (seed === 7) {
+          const div = document.createElement('div');
+          div.className = 'zone-label';
+          div.textContent = 'Play-In';
+          card.appendChild(div);
+        } else if (seed === 11) {
+          const div = document.createElement('div');
+          div.className = 'zone-label';
+          div.textContent = 'Lottery';
+          card.appendChild(div);
+        }
+
+        const row = document.createElement('div');
+        row.className = `team-row ${zoneClass(seed)}${HIGHLIGHT_TEAMS.includes(team.id) ? ' highlight' : ''}`;
+        row.innerHTML = `
+          <span class="seed-num">${seed}</span>
+          <img class="team-logo-sm" src="${getLogoUrl(team.logos)}" alt="${team.abbr}" onerror="this.style.display='none'" />
+          <span class="team-name">${team.shortName}</span>
+          <span class="stat col-w">${team.wins}</span>
+          <span class="stat col-l">${team.losses}</span>
+          <span class="stat col-pct">${team.pct}</span>
+          <span class="stat col-gb">${team.gb}</span>
+          <span class="stat col-str ${streakClass(team.streak)}">${team.streak}</span>
+        `;
+        card.appendChild(row);
+      });
+    }
+
+    async function loadStandings() {
+      const res = await fetch(
+        'https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?level=3&season=2026&seasontype=2'
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      for (const conf of data.children || []) {
+        const isWest = conf.name.toLowerCase().includes('western');
+        const teams = [];
+
+        for (const div of conf.children || []) {
+          for (const entry of div.standings?.entries || []) {
+            const stats = {};
+            for (const s of entry.stats || []) stats[s.name] = s;
+            teams.push({
+              id: entry.team?.id,
+              abbr: entry.team?.abbreviation,
+              shortName: entry.team?.shortDisplayName,
+              logos: entry.team?.logos,
+              wins: Math.round(stats.wins?.value ?? 0),
+              losses: Math.round(stats.losses?.value ?? 0),
+              pct: stats.winPercent?.displayValue ?? '.000',
+              gb: stats.gamesBehind?.displayValue ?? '-',
+              seed: Math.round(stats.playoffSeed?.value ?? 99),
+              streak: stats.streak?.displayValue ?? '',
+            });
+          }
+        }
+
+        teams.sort((a, b) => a.seed - b.seed);
+        renderConference(isWest ? 'west-loading' : 'east-loading', teams);
+      }
+
+      document.getElementById('updated-at').textContent =
+        `Updated ${new Date().toLocaleTimeString()}`;
+    }
+
+    loadStandings().catch(err => {
+      ['east-loading', 'west-loading'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = 'Failed to load';
+      });
+    });
+
+    // Refresh every 10 minutes
+    setInterval(() => {
+      // Re-render by clearing and reloading
+      document.querySelectorAll('.conference-card').forEach(card => {
+        const header = card.querySelector('.conf-header');
+        card.innerHTML = '';
+        card.appendChild(header);
+        const loading = document.createElement('div');
+        loading.className = 'status-msg';
+        loading.id = card === document.querySelectorAll('.conference-card')[0] ? 'east-loading' : 'west-loading';
+        loading.textContent = 'Loading...';
+        card.appendChild(loading);
+      });
+      loadStandings();
+    }, 10 * 60 * 1000);
+  </script>
+</body>
+</html>
