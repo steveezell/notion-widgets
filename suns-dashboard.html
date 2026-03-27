@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phoenix Suns Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .dashboard {
+      width: 100%;
+      max-width: 860px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    @media (max-width: 580px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    /* ── Left: Suns panel ── */
+    .suns-panel {}
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .team-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+
+    .header-text h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #E56020;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .header-text p {
+      font-size: 11px;
+      color: #888;
+      margin-top: 1px;
+    }
+
+    .card {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 1px solid #2a2a45;
+    }
+
+    .card-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .team-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      flex: 1;
+    }
+
+    .team-logo-sm {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+
+    .team-abbr {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #ccc;
+    }
+
+    .team-score {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .team-score.winner { color: #E56020; }
+
+    .vs-divider {
+      font-size: 12px;
+      color: #555;
+      flex-shrink: 0;
+    }
+
+    .score-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 11px;
+      color: #666;
+    }
+
+    /* Spoiler */
+    .spoiler-box {
+      text-align: center;
+      padding: 12px 8px;
+    }
+
+    .spoiler-icon { font-size: 24px; margin-bottom: 5px; }
+
+    .spoiler-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #E56020;
+      margin-bottom: 3px;
+    }
+
+    .spoiler-sub {
+      font-size: 10px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .spoiler-timer {
+      margin-top: 7px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #888;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Next game */
+    .next-game-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .opponent-logo {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .next-details { flex: 1; }
+
+    .next-opponent {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 3px;
+    }
+
+    .next-date {
+      font-size: 11px;
+      color: #E56020;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .next-venue { font-size: 10px; color: #666; }
+
+    .home-away-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .home-badge { background: #E56020; color: #fff; }
+    .away-badge { background: #2a2a45; color: #aaa; }
+
+    .status-msg {
+      text-align: center;
+      color: #555;
+      font-size: 12px;
+      padding: 16px;
+    }
+
+    .error-msg {
+      text-align: center;
+      color: #E56020;
+      font-size: 12px;
+      padding: 16px;
+    }
+
+    /* ── Right: Standings panel ── */
+    .standings-panel {}
+
+    .conference-card {
+      background: #1a1a2e;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #2a2a45;
+    }
+
+    .conf-header {
+      padding: 8px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #aaa;
+      background: #13132a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .col-headers {
+      display: flex;
+      font-size: 9px;
+      color: #444;
+      letter-spacing: 0.5px;
+    }
+
+    .col-w   { width: 24px; text-align: right; }
+    .col-l   { width: 22px; text-align: right; }
+    .col-gb  { width: 30px; text-align: right; }
+    .col-str { width: 26px; text-align: right; }
+
+    .team-row {
+      display: flex;
+      align-items: center;
+      padding: 4px 8px 4px 6px;
+      border-bottom: 1px solid #0f0f1a;
+      gap: 5px;
+    }
+
+    .team-row:last-child { border-bottom: none; }
+    .team-row:hover { background: #1f1f3a; }
+
+    .zone-playoffs { border-left: 2px solid #2ecc71; }
+    .zone-playin   { border-left: 2px solid #f39c12; }
+    .zone-lottery  { border-left: 2px solid #2a2a45; }
+
+    .seed-num {
+      font-size: 9px;
+      color: #444;
+      width: 12px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .standings-logo {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .team-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #ccc;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-row.highlight .team-name { color: #E56020; }
+
+    .stat {
+      font-size: 10px;
+      color: #777;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat.col-w, .stat.col-l { color: #bbb; }
+
+    .streak-w { color: #2ecc71 !important; }
+    .streak-l { color: #e74c3c !important; }
+
+    .zone-label {
+      font-size: 8px;
+      color: #333;
+      text-align: center;
+      padding: 2px 0;
+      background: #161628;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Shared footer */
+    .updated-at {
+      grid-column: 1 / -1;
+      text-align: right;
+      font-size: 10px;
+      color: #333;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+
+    <!-- Left: Suns -->
+    <div class="suns-panel">
+      <div class="header">
+        <img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nba/500/phx.png" alt="Suns" />
+        <div class="header-text">
+          <h1>Phoenix Suns</h1>
+          <p id="record">Loading...</p>
+        </div>
+      </div>
+
+      <div id="last-game-card" class="card">
+        <div class="card-label">Last Game</div>
+        <div class="status-msg">Loading...</div>
+      </div>
+
+      <div id="next-game-card" class="card">
+        <div class="card-label">Next Game</div>
+        <div class="status-msg">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Right: West Standings -->
+    <div class="standings-panel">
+      <div class="conference-card">
+        <div class="conf-header">
+          Western Conference
+          <div class="col-headers">
+            <span class="col-w">W</span>
+            <span class="col-l">L</span>
+            <span class="col-gb">GB</span>
+            <span class="col-str">STK</span>
+          </div>
+        </div>
+        <div class="status-msg" id="west-loading">Loading...</div>
+      </div>
+    </div>
+
+    <div class="updated-at" id="updated-at"></div>
+  </div>
+
+  <script>
+    const TEAM_ID = 21;
+    const SPOILER_HOURS = 12;
+    const AVG_GAME_DURATION_MS = 2.5 * 60 * 60 * 1000;
+
+    const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const DAY_NAMES   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+    function formatGameTime(dateStr) {
+      const d = new Date(dateStr);
+      const day = DAY_NAMES[d.getDay()];
+      const month = MONTH_NAMES[d.getMonth()];
+      let hours = d.getHours();
+      const mins = d.getMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${day}, ${month} ${d.getDate()}  ·  ${hours}:${mins} ${ampm}`;
+    }
+
+    function formatCountdown(ms) {
+      if (ms <= 0) return '0:00:00';
+      const s = Math.floor(ms / 1000);
+      return `${Math.floor(s/3600)}h ${String(Math.floor((s%3600)/60)).padStart(2,'0')}m ${String(s%60).padStart(2,'0')}s`;
+    }
+
+    function getLogoUrl(logos) {
+      if (!logos || !logos.length) return '';
+      const light = logos.find(l => l.rel?.includes('default') && !l.rel?.includes('dark'));
+      return light ? light.href : logos[0].href;
+    }
+
+    function getSpoilerState(lastEvent, now) {
+      if (!lastEvent) return { active: false };
+      const start = new Date(lastEvent.competitions[0].date);
+      const lift = new Date(start.getTime() + AVG_GAME_DURATION_MS + SPOILER_HOURS * 3600000);
+      return { active: lift > now, lift };
+    }
+
+    let spoilerInterval = null;
+
+    function renderLastGame(event, now) {
+      const card = document.getElementById('last-game-card');
+      const comp = event.competitions[0];
+      const gameStart = new Date(comp.date);
+      const lift = new Date(gameStart.getTime() + AVG_GAME_DURATION_MS + SPOILER_HOURS * 3600000);
+      const msLeft = lift - now;
+
+      const home = comp.competitors.find(c => c.homeAway === 'home');
+      const away = comp.competitors.find(c => c.homeAway === 'away');
+      const venue = comp.venue;
+      const gameDate = formatGameTime(comp.date);
+
+      if (msLeft > 0) {
+        card.innerHTML = `
+          <div class="card-label">Last Game — ${gameDate}</div>
+          <div class="spoiler-box">
+            <div class="spoiler-icon">🔒</div>
+            <div class="spoiler-title">Spoiler Protection Active</div>
+            <div class="spoiler-sub">Score hidden until ${formatGameTime(lift.toISOString())}</div>
+            <div class="spoiler-timer" id="spoiler-countdown">${formatCountdown(msLeft)}</div>
+          </div>`;
+        if (spoilerInterval) clearInterval(spoilerInterval);
+        spoilerInterval = setInterval(() => {
+          const rem = lift - Date.now();
+          const el = document.getElementById('spoiler-countdown');
+          if (!el) return;
+          if (rem <= 0) { clearInterval(spoilerInterval); loadAll(); }
+          else el.textContent = formatCountdown(rem);
+        }, 1000);
+      } else {
+        const homeScore = parseInt(home?.score?.displayValue || '0');
+        const awayScore  = parseInt(away?.score?.displayValue  || '0');
+        const homeWon = homeScore > awayScore;
+        const awayWon = awayScore > homeScore;
+        card.innerHTML = `
+          <div class="card-label">Last Game — ${gameDate}</div>
+          <div class="score-row">
+            <div class="team-block">
+              <img class="team-logo-sm" src="${getLogoUrl(away?.team?.logos)}" alt="${away?.team?.abbreviation}" onerror="this.style.display='none'" />
+              <div class="team-abbr">${away?.team?.abbreviation}</div>
+              <div class="team-score ${awayWon ? 'winner' : ''}">${awayScore}</div>
+            </div>
+            <div class="vs-divider">@</div>
+            <div class="team-block">
+              <img class="team-logo-sm" src="${getLogoUrl(home?.team?.logos)}" alt="${home?.team?.abbreviation}" onerror="this.style.display='none'" />
+              <div class="team-abbr">${home?.team?.abbreviation}</div>
+              <div class="team-score ${homeWon ? 'winner' : ''}">${homeScore}</div>
+            </div>
+          </div>
+          <div class="score-meta">
+            <span id="standings-inline">—</span>
+            <span>${venue?.fullName || ''}</span>
+          </div>`;
+      }
+    }
+
+    function renderNextGame(event) {
+      const card = document.getElementById('next-game-card');
+      const comp = event.competitions[0];
+      const suns = comp.competitors.find(c => c.team.id === String(TEAM_ID));
+      const opp  = comp.competitors.find(c => c.team.id !== String(TEAM_ID));
+      const isHome = suns?.homeAway === 'home';
+      const venue = comp.venue;
+      const diffDays = Math.ceil((new Date(comp.date) - new Date()) / 86400000);
+      const daysLabel = diffDays === 0 ? 'Today' : diffDays === 1 ? 'Tomorrow' : `In ${diffDays} days`;
+      card.innerHTML = `
+        <div class="card-label">Next Game — ${daysLabel}</div>
+        <div class="next-game-row">
+          <img class="opponent-logo" src="${getLogoUrl(opp?.team?.logos)}" alt="${opp?.team?.abbreviation}" onerror="this.style.display='none'" />
+          <div class="next-details">
+            <div class="next-opponent">
+              <span class="home-away-badge ${isHome ? 'home-badge' : 'away-badge'}">${isHome ? 'Home' : 'Away'}</span>
+              &nbsp;${isHome ? 'vs' : '@'} ${opp?.team?.displayName || 'TBD'}
+            </div>
+            <div class="next-date">${formatGameTime(comp.date)}</div>
+            <div class="next-venue">${venue?.fullName || ''}, ${venue?.address?.city || ''}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderWestStandings(teams, spoilerActive) {
+      const card = document.querySelector('.conference-card');
+      const header = card.querySelector('.conf-header');
+      // Clear everything except header
+      while (card.lastChild !== header) card.removeChild(card.lastChild);
+
+      teams.forEach(team => {
+        const seed = team.seed;
+        if (seed === 7) {
+          const lbl = document.createElement('div');
+          lbl.className = 'zone-label';
+          lbl.textContent = 'Play-In';
+          card.appendChild(lbl);
+        } else if (seed === 11) {
+          const lbl = document.createElement('div');
+          lbl.className = 'zone-label';
+          lbl.textContent = 'Lottery';
+          card.appendChild(lbl);
+        }
+
+        const zoneClass = seed <= 6 ? 'zone-playoffs' : seed <= 10 ? 'zone-playin' : 'zone-lottery';
+        const isHighlight = team.id === String(TEAM_ID);
+        const streak = team.streak;
+        const streakClass = streak.startsWith('W') ? 'streak-w' : 'streak-l';
+
+        const row = document.createElement('div');
+        row.className = `team-row ${zoneClass}${isHighlight ? ' highlight' : ''}`;
+        row.innerHTML = `
+          <span class="seed-num">${seed}</span>
+          <img class="standings-logo" src="${getLogoUrl(team.logos)}" alt="${team.abbr}" onerror="this.style.display='none'" />
+          <span class="team-name">${team.shortName}</span>
+          <span class="stat col-w">${team.wins}</span>
+          <span class="stat col-l">${team.losses}</span>
+          <span class="stat col-gb">${team.gb}</span>
+          <span class="stat col-str ${streakClass}">${streak}</span>`;
+        card.appendChild(row);
+
+        // Update the inline standings tag in the Suns score card
+        if (isHighlight && !spoilerActive) {
+          const el = document.getElementById('standings-inline');
+          if (el) {
+            const gbRaw = team.gbAbove;
+            const suffix = seed === 1 ? 'st' : seed === 2 ? 'nd' : seed === 3 ? 'rd' : 'th';
+            el.textContent = gbRaw === 0 ? `${seed}${suffix} in West` : `${seed}${suffix} in West · ${gbRaw} GB`;
+          }
+        }
+      });
+    }
+
+    async function loadStandings(spoilerActive) {
+      try {
+        const res = await fetch(
+          'https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?level=3&season=2026&seasontype=2'
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+
+        for (const conf of data.children || []) {
+          if (!conf.name.toLowerCase().includes('western')) continue;
+          const teams = [];
+          for (const div of conf.children || []) {
+            for (const entry of div.standings?.entries || []) {
+              const stats = {};
+              for (const s of entry.stats || []) stats[s.name] = s;
+              teams.push({
+                id: entry.team?.id,
+                abbr: entry.team?.abbreviation,
+                shortName: entry.team?.shortDisplayName,
+                logos: entry.team?.logos,
+                wins: Math.round(stats.wins?.value ?? 0),
+                losses: Math.round(stats.losses?.value ?? 0),
+                gb: stats.gamesBehind?.displayValue ?? '-',
+                gbAbove: stats.points?.value ?? 0,   // GB from team directly above
+                seed: Math.round(stats.playoffSeed?.value ?? 99),
+                streak: stats.streak?.displayValue ?? '',
+              });
+            }
+          }
+          teams.sort((a, b) => a.seed - b.seed);
+          renderWestStandings(teams, spoilerActive);
+        }
+      } catch (e) { /* fail silently */ }
+    }
+
+    async function loadSunsData() {
+      const res = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${TEAM_ID}/schedule`
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const now = new Date();
+      const events = data.events || [];
+      const past   = events.filter(e => new Date(e.date) < now);
+      const future = events.filter(e => new Date(e.date) >= now);
+      const lastEvent = past.length ? past[past.length - 1] : null;
+      const { active: spoilerActive } = getSpoilerState(lastEvent, now);
+
+      const record = data.team?.recordSummary;
+      document.getElementById('record').textContent = spoilerActive
+        ? '2025–26'
+        : record ? `${record} · 2025–26` : '2025–26';
+
+      if (lastEvent) renderLastGame(lastEvent, now);
+      else document.getElementById('last-game-card').innerHTML =
+        '<div class="card-label">Last Game</div><div class="status-msg">No games played yet</div>';
+
+      if (future.length) renderNextGame(future[0]);
+      else document.getElementById('next-game-card').innerHTML =
+        '<div class="card-label">Next Game</div><div class="status-msg">No upcoming games scheduled</div>';
+
+      return spoilerActive;
+    }
+
+    async function loadAll() {
+      try {
+        const spoilerActive = await loadSunsData();
+        await loadStandings(spoilerActive);
+        document.getElementById('updated-at').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+      } catch (err) {
+        document.getElementById('last-game-card').innerHTML =
+          `<div class="card-label">Last Game</div><div class="error-msg">Failed to load</div>`;
+      }
+    }
+
+    loadAll();
+    setInterval(loadAll, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
